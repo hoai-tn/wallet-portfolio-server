@@ -7,6 +7,7 @@ const {
   getBalance,
 } = require("./src/services/moralist");
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
+const { default: axios } = require("axios");
 
 const COIN_INFO = {
   ETH: {
@@ -88,10 +89,9 @@ app.use(
 
       const balance = await provider.getBalance(ethers.getAddress(address));
       const formatBalance = ethers.formatEther(balance);
-      console.log({ formatBalance });
-      const usdPrice = await getUsdPrice(mainChain, coinInfo.address);
+      const usdPrice = await getUsdPrice(coinInfo.symbol);
 
-      const usdBalance = formatBalance * usdPrice;
+      const usdBalance = (formatBalance * usdPrice).toFixed(2);
       const token = {
         ...coinInfo,
         token_address: coinInfo.address,
@@ -99,12 +99,11 @@ app.use(
         usdBalance,
       };
       // const token = nativePrice
-      console.log({ mainChain });
       let walletTokens = await getWalletTokens(address, mainChain);
       walletTokens = await Promise.all(
         walletTokens.map(async (e) => {
           const balance = calculateEquity(e.decimals, e.balance);
-          const usdPrice = await getUsdPrice(mainChain, e.address);
+          const usdPrice = await getUsdPrice(e.symbol);
           return {
             ...e,
             balance,
@@ -145,13 +144,15 @@ function calculateEquity(decimals, balance) {
   return equity;
 }
 
-const getUsdPrice = async (chain, address) => {
+const getUsdPrice = async (symbol) => {
   let usdPrice = 0;
   try {
-    const getBalance = await getBalance(mainChain, e.token_address);
-    usdPrice = getBalance.usdPrice;
+    const { data } = await axios.get(
+      `https://min-api.cryptocompare.com/data/price?fsym=${symbol}&tsyms=USD&api_key=11fb98d6d1372afc7ed071433281aa990bb58e8c8fb99d910cf62f93eecf79e1`
+    );
+    usdPrice = data.USD;
   } catch (error) {
     console.log(error);
   }
-  return usdPrice;
+  return usdPrice || 0;
 };
