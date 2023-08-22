@@ -12,15 +12,23 @@ const getWalletTokens = async (address, chain) => {
   });
   return response.toJSON();
 };
-const getBalance = async (chain,address) => {
+const getBalance = async (chain, address) => {
   const response = await Moralis.EvmApi.token.getTokenPrice({
     chain,
     address,
   });
   return response.raw;
 };
+const getTransactionByAddress = async (address, chain) => {
+  const response = await Moralis.EvmApi.transaction.getWalletTransactions({
+    address,
+    chain,
+  });
+  return response.toJSON();
+};
 module.exports = {
   initMoralist,
   getWalletTokens,
   getBalance,
+  getTransactionByAddress,
 };
