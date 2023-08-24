@@ -9,7 +9,7 @@ const {
   calculateEquity,
   formatTransactions,
 } = require("../utils/helper.util");
-const { ethers } = require("ethers");
+const { ethers, BigNumber } = require("ethers");
 
 const getTokens = async (req, res) => {
   const { address } = req.params;
@@ -72,15 +72,18 @@ const getTokens = async (req, res) => {
 const getTransactions = async (req, res) => {
   const { address } = req.params;
   try {
-    let ethTransactions = await getTransactionByAddress(
-      address,
-      EvmChain.ETHEREUM
-    );
-    ethTransactions = formatTransactions(
-      ethTransactions.result,
-      CHAIN.ETHEREUM,
-      address
-    );
+    let { transactionsResult, tokenTransfersResult } =
+      await getTransactionByAddress(address, EvmChain.ETHEREUM);
+
+      transactionsResult = transactionsResult.map((item) => {
+        // ethers.formatEther(e._data.value) 
+      return { ...item._data, valueDecimal: Number(item.value.ether).toFixed(2)};
+    });
+    // transactionsResult = formatTransactions(
+    //   transactionsResult,
+    //   CHAIN.ETHEREUM,
+    //   address
+    // );
     // let bscTransactions = await getTransactionByAddress(
     //   address,
     //   EvmChain.BSC
@@ -90,7 +93,7 @@ const getTransactions = async (req, res) => {
     //   CHAIN.BSC,
     //   address
     // );
-    res.json({ ethTransactions });
+    res.json({ data: [...transactionsResult, ...tokenTransfersResult] });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error" });
