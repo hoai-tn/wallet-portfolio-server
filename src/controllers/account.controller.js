@@ -72,13 +72,38 @@ const getTokens = async (req, res) => {
 const getTransactions = async (req, res) => {
   const { address } = req.params;
   try {
+    let transactions = [];
     let { transactionsResult, tokenTransfersResult } =
       await getTransactionByAddress(address, EvmChain.ETHEREUM);
+    transactions = transactionsResult.map((item) => {
 
-      transactionsResult = transactionsResult.map((item) => {
-        // ethers.formatEther(e._data.value) 
-      return { ...item._data, valueDecimal: Number(item.value.ether).toFixed(2)};
+      return {
+        ...item,
+        value_decimal: Number(ethers.formatEther(item.value)),
+        gas: Number(item.receipt_gas_used),
+      };
     });
+    tokenTransfersResult.forEach((tokenTransfer) => {
+      const findHashByIndex = transactions.findIndex(
+        (e) => e.hash === tokenTransfer.transaction_hash
+      );
+      if (findHashByIndex > 0) {
+        transactions[findHashByIndex] = {
+          ...transactions[findHashByIndex],
+          token_name: tokenTransfer.token_name,
+          token_symbol: tokenTransfer.token_symbol,
+          token_logo: tokenTransfer.token_logo,
+          value_decimal: tokenTransfer.value_decimal,
+        };
+      } else {
+        transactions.push(tokenTransfer);
+      }
+      // transactions.forEach((transaction) => {
+      //   if (tokenTransfer.transaction_hash === transaction.hash) {
+      //   }
+      // });
+    });
+
     // transactionsResult = formatTransactions(
     //   transactionsResult,
     //   CHAIN.ETHEREUM,
@@ -93,7 +118,7 @@ const getTransactions = async (req, res) => {
     //   CHAIN.BSC,
     //   address
     // );
-    res.json({ data: [...transactionsResult, ...tokenTransfersResult] });
+    res.json({ data: [...transactions], tokenTransfersResult });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error" });

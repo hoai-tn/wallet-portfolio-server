@@ -20,17 +20,17 @@ const getBalance = async (chain, address) => {
   return response.raw;
 };
 const getTransactionByAddress = async (address, chain) => {
-  const { result: transactionsResult } =
-    await Moralis.EvmApi.transaction.getWalletTransactions({
+  const responseTransactions =
+    await Moralis.EvmApi.transaction.getWalletTransactionsVerbose({
       address,
       chain,
     });
-  const { result: tokenTransfersResult } =
+  const  responseTokenTransfer =
     await Moralis.EvmApi.token.getWalletTokenTransfers({
       address,
       chain,
     });
-  return { transactionsResult, tokenTransfersResult };
+  return { transactionsResult: responseTransactions.raw.result, tokenTransfersResult:responseTokenTransfer.raw.result};
 };
 module.exports = {
   initMoralist,
